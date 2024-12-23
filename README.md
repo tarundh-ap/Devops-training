@@ -6,4 +6,4 @@
 
 - TO BUILD THE IMAGE:
   -  Open the terminal from the directory where the dockerfile is.
-  -  In terminal run the command '''docker build --tag image-name:latest .'''
+  -  In terminal run the command ```docker build --tag image-name:latest .```
