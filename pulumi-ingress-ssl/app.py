@@ -41,6 +41,6 @@ class WebApp:
             spec={
                 "selector": labels,
                 "ports": [{"name": "http", "protocol": "TCP", "port": 80, "targetPort": 80}],
-                "type": "LoadBalancer"
+                "type": "ClusterIP"
             }
         )
