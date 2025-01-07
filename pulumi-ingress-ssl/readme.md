@@ -10,11 +10,23 @@ $ kubectl api-resources| grep metallb
 
 # Install NGINX Ingress Controller with Helm
 ```
+
+# Install nginx controller
+```
 $ helm pull oci://ghcr.io/nginxinc/charts/nginx-ingress --untar --version 0.17.1
 $ cd nginx-ingress
 $ kubectl apply -f crds
-$ helm install nginx-ingress oci://ghcr.io/nginxinc/charts/nginx-ingress --version 0.17.1 
+$ helm install nginx-ingress oci://ghcr.io/nginxinc/charts/nginx-ingress --version 0.17.1
+$ cd nginx-ingress
+$ kubectl apply -f crds
 ```
+
+
+#tsl and ssl
+Generate tsl and ssl certificates and add it into the pulumi config
+
+
+
 
 # Do pulumi up
 
