@@ -22,10 +22,8 @@ $ kubectl apply -f crds
 ```
 
 
-#tsl and ssl
-Generate tsl and ssl certificates and add it into the pulumi config
-
-
+# tsl and ssl
+ ```Generate tsl and ssl certificates and add it into the pulumi config```
 
 
 # Do pulumi up
