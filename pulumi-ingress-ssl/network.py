@@ -64,7 +64,8 @@ class NetworkConfig:
             metadata={
                 "name": "web-app",
                 "annotations": {
-                    "kubernetes.io/ingress.class": "nginx"
+                    "kubernetes.io/ingress.class": "nginx",
+                    # "nginx.ingress.kubernetes.io/rewrite-target": "/",
                 }
             },
             spec={
@@ -81,6 +82,57 @@ class NetworkConfig:
                                         "service": {
                                             "name": "web-app",
                                             "port": {"number": 80}
+                                        }
+                                    }
+                                },
+                                # {
+                                #     "path": "/monitor",
+                                #     "pathType": "Prefix",
+                                #     "backend":{
+                                #         "service":{
+                                #             "name": "grafana",
+                                #             "namespace": "monitoring",
+                                #             "port": {"number": 3000},
+                                #         }
+                                #     }
+                                # }
+                            ]
+                        }
+                    }
+                ],
+                "tls": [
+                    {
+                        "hosts": [host],
+                        "secretName": self.tls_secret.metadata["name"],
+                    }
+                ]
+            }
+        )
+
+        grafana_ingress = k8s.networking.v1.Ingress(
+            f"{name}-grafana-ingress",
+            metadata={
+                "name": "grafana-ingress",
+                "namespace": "monitoring",
+                "annotations": {
+                    "kubernetes.io/ingress.class": "nginx",
+                    # "nginx.ingress.kubernetes.io/rewrite-target": "/"
+                }
+            },
+            spec={
+                "ingressClassName": "nginx",
+                "rules": [
+                    {
+                        "host": host, 
+                        "http": {
+                            "paths": [
+                                {
+                                    "path": "/monitor", 
+                                    "pathType": "Prefix",
+                                    "backend": {
+                                        "service": {
+                                            "name": "grafana",
+                                            "port": {"number": 3000},
                                         }
                                     }
                                 }
