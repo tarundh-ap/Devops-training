@@ -118,23 +118,36 @@ ruler:
         )
 
         promtail_service_account = k8s.core.v1.ServiceAccount(
-            "promtail-service-account",
-            metadata={
-                "name": "promtail",
-                "namespace": "monitoring"
-            }
-        )
+    "promtail-service-account",
+    metadata={
+        "name": "promtail",
+        "namespace": "monitoring"
+    }
+)
+
 
         cluster_role = k8s.rbac.v1.ClusterRole(
             "promtail-cluster-role",
             rules=[
                 {
                     "apiGroups": [""],
-                    "resources": ["pods"],
-                    "verbs": ["get","list","watch"]
+                    "resources": ["pods","pods/log"],
+                    "verbs": ["get", "list", "watch"]
+                },
+                {
+                    "apiGroups": [""],
+                    "resources": ["nodes"],  
+                    "verbs": ["get", "list", "watch"]  
+                },
+                {
+                    "apiGroups": [""],
+                    "resources": ["namespaces"],
+                    "verbs": ["get", "list"]
                 }
             ]
         )
+
+
 
         cluster_role_binding = k8s.rbac.v1.ClusterRoleBinding(
     "promtail-cluster-role-binding",
@@ -154,6 +167,7 @@ ruler:
 )
 
 
+
         promtail_config_map = k8s.core.v1.ConfigMap(
             f"{name}-promtail-config",
             metadata={"name": "promtail-config", "namespace": "monitoring"},
@@ -171,33 +185,37 @@ positions:
   filename: /tmp/positions.yaml
 
 scrape_configs:
-  - job_name: 'application-logs'
+  - job_name: system
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: varlogs
+          __path__: /var/log/*log
+
+  - job_name: 'nginx'
     kubernetes_sd_configs:
       - role: pod
+        namespaces:
+          names:
+            - ingress-nginx  # Specify the namespace where NGINX is running
     relabel_configs:
+      - source_labels: [__meta_kubernetes_namespace]
+        target_label: kubernetes_namespace
+      - source_labels: [__meta_kubernetes_pod_name]
+        target_label: kubernetes_pod_name
+      - source_labels: [__meta_kubernetes_pod_container_name]
+        target_label: kubernetes_container_name
       - source_labels: [__meta_kubernetes_pod_label_app]
         target_label: app
-      - source_labels: [__meta_kubernetes_namespace]
-        target_label: namespace
-      - source_labels: [__meta_kubernetes_pod_name]
-        target_label: pod
-      - source_labels: [__meta_kubernetes_pod_label_app]
-        action: keep
-        regex: web-app
-    
-  - job_name: 'nginx-ingress-logs'
-    kubernetes_sd_configs:
-      - role: pod
-    relabel_configs:
-      - source_labels: [__meta_kubernetes_pod_label_app]
-        target_label: app
-      - source_labels: [__meta_kubernetes_namespace]
-        target_label: namespace
-      - source_labels: [__meta_kubernetes_pod_name]
-        target_label: pod
-      - source_labels: [__meta_kubernetes_pod_label_app]
-        action: keep
-        regex: ingress-nginx-controller
+      - source_labels: [__meta_kubernetes_pod_label_name]
+        target_label: kubernetes_pod_label_name
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx
+          __path__: /var/log/pods/ingress-nginx_ingress-nginx-controller-7d7ffd6f99-c7b55_897f3d1a-0f1b-4321-a893-01638f7fca84/controller/*log 
 
 """
             },
@@ -222,14 +240,18 @@ scrape_configs:
                                 "volumeMounts": [
                                     {"name": "config", "mountPath": "/etc/promtail"},
                                     {"name": "varlog", "mountPath": "/var/log"},
+                                    {"name": "nginxlogs", "mountPath": "/var/log/pods/ingress-nginx_ingress-nginx-controller-7d7ffd6f99-c7b55_897f3d1a-0f1b-4321-a893-01638f7fca84/controller/"},
                                     {"name": "positions", "mountPath": "/tmp"},
+                                    {"name": "varlibdockercontainers", "mountPath": "/var/lib/docker/containers","readOnly": True}
                                 ],
                             }
                         ],
                         "volumes": [
                             {"name": "config", "configMap": {"name": "promtail-config"}},
                             {"name": "varlog", "hostPath": {"path": "/var/log"}},
+                            {"name": "nginxlogs", "hostPath": {"path": "/var/log/pods/ingress-nginx_ingress-nginx-controller-7d7ffd6f99-c7b55_897f3d1a-0f1b-4321-a893-01638f7fca84/controller"}},
                             {"name": "positions", "emptyDir": {}},
+                            {"name": "varlibdockercontainers", "hostPath":{"path": "/var/lib/docker/containers"}}
                         ],
                     },
                 },
